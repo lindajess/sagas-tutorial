@@ -15,7 +15,7 @@ const sagaMiddleware = createSagaMiddleware()
 const store = createStore(reducer, applyMiddleware(sagaMiddleware))
 sagaMiddleware.run(rootSaga)
 
-const action = type => store.dispatch({ type })
+const action = (type, payload = {}) => store.dispatch({ type, payload })
 
 function render() {
   ReactDOM.render(
@@ -23,7 +23,8 @@ function render() {
       value={store.getState()}
       onIncrement={() => action('INCREMENT')}
       onIncrementAsync={() => action('INCREMENT_ASYNC')}
-      onDecrement={() => action('DECREMENT')} />,
+      onDecrement={() => action('DECREMENT')}
+      fetchData={() => action('FETCH_REQUESTED', { url: 'https://run.mocky.io/v3/1d3aed75-1f55-400a-98b6-7c0e71d41c41' })} />,
     document.getElementById('root')
   )
 }

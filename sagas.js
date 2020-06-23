@@ -1,4 +1,5 @@
-import { put, takeEvery, call, all } from 'redux-saga/effects'
+import { put, takeEvery, call, all, takeLatest, cancelled } from 'redux-saga/effects'
+import axios from 'axios'
 import Api from './Api'
 
 function* helloSaga() {
@@ -18,17 +19,24 @@ function* watchIncrementAsync() {
     yield takeEvery('INCREMENT_ASYNC', incrementAsync)
 }
 
+const cancelSource = axios.CancelToken.source()
 function* fetchData(action) {
     try {
-        const data = yield call(Api.get, action.payload.url)
+        const data = yield call(Api.get, action.payload.url, { cancelToken: cancelSource.token })
         yield put({ type: 'FETCH_SUCCEEDED', ...data })
-    } catch (err) {
-        yield put({ type: 'FETCH_FAILED', err })
+    } finally {
+        if (yield cancelled()) {
+            yield call(cancelSource.cancel, cancelSource.token)
+        }
     }
 }
 
 function* watchFetchData() {
-    yield take('FETCH_REQUESTED', fetchData)
+    try {
+        yield takeLatest('FETCH_REQUESTED', fetchData)
+    } catch (err) {
+        yield put({ type: 'FETCH_FAILED', err })
+    }
 }
 
 export default function* rootSaga() {
